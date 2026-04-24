@@ -1,0 +1,10 @@
+streamlit
+scipy
+pandas
+premier-league
+soccerdata
+requests
+beautifulsoup4
+lxml
+selenium
+webdriver-manager
