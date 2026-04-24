@@ -136,6 +136,25 @@ st.subheader("Championship probability")
 st.caption(f"Based on {N_SIMS} simulations. Teams not shown won 0 simulations.")
 st.dataframe(champion_df, use_container_width=True)
 
+# ── Relegation probability ────────────────────────────────────────────────────
+
+# Rank teams by points in each simulation (rank 1 = most points)
+# Bottom 3 = rank > N - 3, i.e. the 3 lowest ranked teams
+n_teams = pts_df.shape[0]
+# rank(axis=0, ascending=False) gives rank 1 to the highest points per sim
+ranks = pts_df.rank(axis=0, ascending=False, method='min')  # (N, S)
+relegated_counts = (ranks > n_teams - 3).sum(axis=1)        # times each team was in bottom 3
+relg_pct = (relegated_counts / N_SIMS * 100).sort_values(ascending=False).round(1)
+
+relg_df = relg_pct.reset_index()
+relg_df.columns = ['Team', 'Relegation %']
+relg_df['Relegation %'] = relg_df['Relegation %'].map(lambda x: f"{x:.1f}%")
+relg_df.index += 1
+
+st.subheader("Relegation probability")
+st.caption(f"Based on {N_SIMS} simulations. Probability of finishing in the bottom 3.")
+st.dataframe(relg_df, use_container_width=True)
+
 # ── Average final table ───────────────────────────────────────────────────────
 
 avg_pts = pts_df.mean(axis=1).sort_values(ascending=False)
