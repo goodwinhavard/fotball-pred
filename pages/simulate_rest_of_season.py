@@ -155,6 +155,34 @@ st.subheader("Relegation probability")
 st.caption(f"Based on {N_SIMS} simulations. Probability of finishing in the bottom 3.")
 st.dataframe(relg_df, use_container_width=True)
 
+# ── 5th place probability ─────────────────────────────────────────────────────
+
+fifth_counts = (ranks == 5).sum(axis=1).sort_values(ascending=False)
+fifth_pct = (fifth_counts / N_SIMS * 100).round(1)
+
+fifth_df = fifth_pct.reset_index()
+fifth_df.columns = ['Team', '5th Place %']
+fifth_df['5th Place %'] = fifth_df['5th Place %'].map(lambda x: f"{x:.1f}%")
+fifth_df.index += 1
+
+st.subheader("5th place probability")
+st.caption(f"Based on {N_SIMS} simulations. Probability of finishing exactly 5th.")
+st.dataframe(fifth_df, use_container_width=True)
+
+# ── 6th place probability ─────────────────────────────────────────────────────
+
+sixth_counts = (ranks == 6).sum(axis=1).sort_values(ascending=False)
+sixth_pct = (sixth_counts / N_SIMS * 100).round(1)
+
+sixth_df = sixth_pct.reset_index()
+sixth_df.columns = ['Team', '6th Place %']
+sixth_df['6th Place %'] = sixth_df['6th Place %'].map(lambda x: f"{x:.1f}%")
+sixth_df.index += 1
+
+st.subheader("6th place probability")
+st.caption(f"Based on {N_SIMS} simulations. Probability of finishing exactly 6th.")
+st.dataframe(sixth_df, use_container_width=True)
+
 # ── Average final table ───────────────────────────────────────────────────────
 
 avg_pts = pts_df.mean(axis=1).sort_values(ascending=False)
