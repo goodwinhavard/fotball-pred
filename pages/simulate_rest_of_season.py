@@ -183,6 +183,20 @@ st.subheader("6th place probability")
 st.caption(f"Based on {N_SIMS} simulations. Probability of finishing exactly 6th.")
 st.dataframe(sixth_df, use_container_width=True)
 
+# ── 7th place probability ─────────────────────────────────────────────────────
+
+seventh_counts = (ranks == 7).sum(axis=1).sort_values(ascending=False)
+seventh_pct = (seventh_counts / N_SIMS * 100).round(1)
+
+seventh_df = seventh_pct.reset_index()
+seventh_df.columns = ['Team', '7th Place %']
+seventh_df['7th Place %'] = seventh_df['7th Place %'].map(lambda x: f"{x:.1f}%")
+seventh_df.index += 1
+
+st.subheader("7th place probability")
+st.caption(f"Based on {N_SIMS} simulations. Probability of finishing exactly 7th.")
+st.dataframe(seventh_df, use_container_width=True)
+
 # ── Average final table ───────────────────────────────────────────────────────
 
 avg_pts = pts_df.mean(axis=1).sort_values(ascending=False)
