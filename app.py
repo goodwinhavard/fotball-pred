@@ -80,15 +80,32 @@ else:
     st.caption("Probability of finishing in the bottom 3.")
     st.dataframe(relg_df, use_container_width=True)
 
-    for place in [5, 6, 7]:
-        pct  = ((ranks == place).sum(axis=1) / N_SIMS * 100).sort_values(ascending=False).round(1)
-        p_df = pct.reset_index()
-        p_df.columns = ['Team', f'{place}th Place %']
-        p_df[f'{place}th Place %'] = p_df[f'{place}th Place %'].map(lambda x: f"{x:.1f}%")
-        p_df.index += 1
-        st.subheader(f"{place}th place probability")
-        st.caption(f"Probability of finishing exactly {place}th.")
-        st.dataframe(p_df, use_container_width=True)
+    top5_pct = ((ranks <= 5).sum(axis=1) / N_SIMS * 100).sort_values(ascending=False).round(1)
+    top5_df  = top5_pct.reset_index()
+    top5_df.columns = ['Team', 'Top 5 %']
+    top5_df['Top 5 %'] = top5_df['Top 5 %'].map(lambda x: f"{x:.1f}%")
+    top5_df.index += 1
+    st.subheader("Top 5 probability")
+    st.caption("Probability of finishing in the top 5.")
+    st.dataframe(top5_df, use_container_width=True)
+
+    p67_pct = (((ranks == 6) | (ranks == 7)).sum(axis=1) / N_SIMS * 100).sort_values(ascending=False).round(1)
+    p67_df  = p67_pct.reset_index()
+    p67_df.columns = ['Team', '6th or 7th %']
+    p67_df['6th or 7th %'] = p67_df['6th or 7th %'].map(lambda x: f"{x:.1f}%")
+    p67_df.index += 1
+    st.subheader("6th or 7th place probability")
+    st.caption("Probability of finishing 6th or 7th.")
+    st.dataframe(p67_df, use_container_width=True)
+
+    p8_pct = ((ranks == 8).sum(axis=1) / N_SIMS * 100).sort_values(ascending=False).round(1)
+    p8_df  = p8_pct.reset_index()
+    p8_df.columns = ['Team', '8th Place %']
+    p8_df['8th Place %'] = p8_df['8th Place %'].map(lambda x: f"{x:.1f}%")
+    p8_df.index += 1
+    st.subheader("8th place probability")
+    st.caption("Probability of finishing exactly 8th.")
+    st.dataframe(p8_df, use_container_width=True)
 
     avg_df = pts_df.mean(axis=1).sort_values(ascending=False).reset_index()
     avg_df.columns = ['Team', 'Avg Points']
