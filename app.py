@@ -52,10 +52,14 @@ pts_df = st.session_state['simulation_results']
 if pts_df is None:
     st.info("No remaining matches to simulate — the season is complete.")
 else:
-    n_teams = pts_df.shape[0]
-    ranks   = pts_df.rank(axis=0, ascending=False, method='min')
+    n_teams  = pts_df.shape[0]
+    # Add tiny noise to break point ties: ensures each simulation assigns
+    # unique ranks so exactly 3 teams fall in the relegation zone per run.
+    noise    = np.random.default_rng().random(pts_df.shape) * 1e-6
+    pts_rank = pts_df + noise
+    ranks    = pts_rank.rank(axis=0, ascending=False, method='first')
 
-    win_pct     = (pts_df.idxmax(axis=0).value_counts() / N_SIMS * 100).round(1)
+    win_pct     = (pts_rank.idxmax(axis=0).value_counts() / N_SIMS * 100).round(1)
     champion_df = win_pct.reset_index()
     champion_df.columns = ['Team', 'Win %']
     champion_df = champion_df.sort_values('Win %', ascending=False).reset_index(drop=True)
