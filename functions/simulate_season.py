@@ -65,4 +65,4 @@ def simulate_season(played_df, unplayed_df, model, n_sims):
         sim_pts[hi] += np.where(home_win[f], 3, np.where(draw[f], 1, 0))
         sim_pts[ai] += np.where(~home_win[f] & ~draw[f], 3, np.where(draw[f], 1, 0))
 
-    return pd.DataFrame(sim_pts, index=teams), hg, ag
+    return pd.DataFrame(sim_pts, index=teams)
