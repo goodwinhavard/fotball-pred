@@ -31,9 +31,8 @@ if 'simulation_results' not in st.session_state:
         st.session_state['simulation_results'] = None
     else:
         with st.spinner(f"Running {N_SIMS} simulations..."):
-            st.session_state['simulation_results'] = simulate_season(
-                played_df, unplayed_df, model, N_SIMS
-            )
+            pts_df, hg, ag = simulate_season(played_df, unplayed_df, model, N_SIMS)
+            st.session_state['simulation_results'] = (pts_df, hg, ag)
 
 # ── Display ───────────────────────────────────────────────────────────────────
 
@@ -47,11 +46,37 @@ st.write(f"**{len(played_df)}** matches played — **{len(unplayed_df)}** remain
 with st.expander("Remaining fixtures"):
     st.dataframe(unplayed_df[['Round', 'Home Team', 'Away Team']], use_container_width=True)
 
-pts_df = st.session_state['simulation_results']
+sim_results = st.session_state['simulation_results']
+
+if sim_results is None:
+    pts_df = None
+else:
+    pts_df, hg, ag = sim_results
 
 if pts_df is None:
     st.info("No remaining matches to simulate — the season is complete.")
 else:
+    encoded   = hg * 100 + ag
+    modal_scores, modal_pcts = [], []
+    for f in range(len(unplayed_df)):
+        codes            = encoded[f]
+        unique, counts   = np.unique(codes, return_counts=True)
+        best             = np.argmax(counts)
+        h, a             = divmod(int(unique[best]), 100)
+        modal_scores.append(f"{h} - {a}")
+        modal_pcts.append(round(counts[best] / N_SIMS * 100, 1))
+
+    likely_df = unplayed_df[['Round', 'Home Team', 'Away Team']].copy()
+    likely_df['Most Likely Score'] = modal_scores
+    likely_df['Frequency %']       = [f"{p:.1f}%" for p in modal_pcts]
+    likely_df = likely_df.reset_index(drop=True)
+    likely_df.index += 1
+
+    #with st.expander("Most likely result per fixture"):
+    st.caption("The scoreline that occurred most often across all simulations.")
+    st.dataframe(likely_df, use_container_width=True)
+
+
     n_teams  = pts_df.shape[0]
     # Add tiny noise to break point ties: ensures each simulation assigns
     # unique ranks so exactly 3 teams fall in the relegation zone per run.
