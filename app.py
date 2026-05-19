@@ -73,9 +73,16 @@ else:
         modal_scores.append(f"{h} - {a}")
         modal_pcts.append(round(counts[best] / N_SIMS * 100, 1))
 
+    home_pcts = (hg > ag).sum(axis=1) / N_SIMS * 100
+    draw_pcts = (hg == ag).sum(axis=1) / N_SIMS * 100
+    away_pcts = (hg < ag).sum(axis=1) / N_SIMS * 100
+
     likely_df = unplayed_df[['Round', 'Home Team', 'Away Team']].copy()
     likely_df['Most Likely Score'] = modal_scores
     likely_df['Frequency %']       = [f"{p:.1f}%" for p in modal_pcts]
+    likely_df['Home %']            = [f"{p:.1f}%" for p in home_pcts.round(1)]
+    likely_df['Draw %']            = [f"{p:.1f}%" for p in draw_pcts.round(1)]
+    likely_df['Away %']            = [f"{p:.1f}%" for p in away_pcts.round(1)]
     likely_df = likely_df.reset_index(drop=True)
     likely_df.index += 1
 

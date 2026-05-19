@@ -3,7 +3,11 @@
     "allow": [
       "WebFetch(domain:www.mdpi.com)",
       "Bash(pip install:*)",
-      "WebFetch(domain:www.nifs.no)"
+      "WebFetch(domain:www.nifs.no)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
