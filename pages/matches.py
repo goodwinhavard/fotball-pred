@@ -4,7 +4,7 @@ from functions.load_matches import load_matches
 st.header("Premier League Matches 2025-2026")
 
 if st.button("Load matches"):
-    with st.spinner("Scraping data from NIFS..."):
+    with st.spinner("Loading match data from API..."):
         load_matches()
 
 if 'matches' in st.session_state:

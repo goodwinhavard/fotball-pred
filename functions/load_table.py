@@ -1,67 +1,45 @@
 import streamlit as st
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 
 
 def load_table():
-    """Scrape the league table and store it in st.session_state['table'].
+    """Load the current Premier League table from the Football-Data API.
 
-    Returns None on success (the table may legitimately be empty early in the
-    season), or an error message string on failure. When an error is returned,
-    st.session_state['table'] is left unset so the caller can abort before
-    running the simulation.
+    Stores the result in st.session_state['table'].
     """
     try:
-        url = "https://www.nifs.no/tabell.php?countryId=2&tournamentId=7&stageId=711178"
-        response = requests.get(url)
+        uri = "https://api.football-data.org/v4/competitions/PL/standings"
+        headers = {"X-Auth-Token": "b006736168e34387975ae15e83b341a4"}
+
+        response = requests.get(uri, headers=headers, timeout=20)
         response.raise_for_status()
 
-        soup = BeautifulSoup(response.content, 'html.parser')
+        data = response.json()
+        standings = data.get("standings", [])
+        if not standings:
+            st.session_state['table'] = pd.DataFrame()
+            return "No standings returned from the API."
 
-        table = soup.find('table', class_='nifs_table_r')
-        if not table:
-            return "Could not find the league table on the page (the site layout may have changed)."
+        table = standings[0].get("table", [])
+        df = pd.DataFrame([
+            {
+                'Pos': team['position'],
+                'Team': team['team']['shortName'],
+                'P': team['playedGames'],
+                'W': team['won'],
+                'D': team['draw'],
+                'L': team['lost'],
+                'GF': team['goalsFor'],
+                'GA': team['goalsAgainst'],
+                'GD': team['goalDifference'],
+                'Pts': team['points'],
+            }
+            for team in table
+        ])
 
-        data = []
-        for row in table.find_all('tr'):
-            cells = row.find_all('td')
-            if len(cells) < 10:
-                continue  # skip header / empty rows
-
-            position = cells[0].get_text(strip=True)
-            if not position.isdigit():
-                continue  # skip non-data rows
-
-            # Team name is inside an anchor tag in the second cell
-            team_cell = cells[1]
-            team_link = team_cell.find('a')
-            team = team_link.get_text(strip=True) if team_link else team_cell.get_text(strip=True)
-
-            played    = cells[2].get_text(strip=True)
-            won       = cells[3].get_text(strip=True)
-            drawn     = cells[4].get_text(strip=True)
-            lost      = cells[5].get_text(strip=True)
-            goals_for = cells[6].get_text(strip=True)
-            goals_aga = cells[8].get_text(strip=True)
-            goal_diff = cells[9].get_text(strip=True)
-            points    = cells[10].get_text(strip=True)
-
-            data.append({
-                'Pos':    int(position),
-                'Team':   team,
-                'P':      int(played)  if played.lstrip('-').isdigit()  else played,
-                'W':      int(won)     if won.lstrip('-').isdigit()     else won,
-                'D':      int(drawn)   if drawn.lstrip('-').isdigit()   else drawn,
-                'L':      int(lost)    if lost.lstrip('-').isdigit()    else lost,
-                'GF':     int(goals_for) if goals_for.lstrip('-').isdigit() else goals_for,
-                'GA':     int(goals_aga) if goals_aga.lstrip('-').isdigit() else goals_aga,
-                'GD':     goal_diff,
-                'Pts':    int(points)  if points.lstrip('-').isdigit()  else points,
-            })
-
-        st.session_state['table'] = pd.DataFrame(data) if data else pd.DataFrame()
+        st.session_state['table'] = df
         return None
 
     except Exception as e:
-        return f"Failed to scrape table: {e}"
+        return f"Failed to load table from API: {e}"
