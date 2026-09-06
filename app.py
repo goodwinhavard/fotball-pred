@@ -10,10 +10,23 @@ N_SIMS = 10000
 
 # ── Computation (runs once, cached in session state) ──────────────────────────
 
-if 'matches' not in st.session_state or 'table' not in st.session_state:
-    with st.spinner("Loading matches and table..."):
-        load_matches()
-        load_table()
+if 'matches' not in st.session_state:
+    with st.spinner("Loading matches..."):
+        print("Loading matches...")
+        matches_err = load_matches()
+    if matches_err or 'matches' not in st.session_state:
+        st.error(f"Could not load matches: {matches_err or 'unknown error'}")
+        st.info("The simulation needs the fixture list to run. Try reloading the page.")
+        st.stop()
+
+if 'table' not in st.session_state:
+    with st.spinner("Loading table..."):
+        print("Loading table...")
+        table_err = load_table()
+    if table_err or 'table' not in st.session_state:
+        st.error(f"Could not load the league table: {table_err or 'unknown error'}")
+        st.info("Try reloading the page.")
+        st.stop()
 
 if 'poisson_model' not in st.session_state:
     with st.spinner("Training Poisson model..."):

@@ -4,17 +4,67 @@ import requests
 from bs4 import BeautifulSoup
 
 
-def load_matches():
-    try:
-        url = "https://www.nifs.no/kamper.php?countryId=2&tournamentId=7&stageId=699613"
-        response = requests.get(url)
-        response.raise_for_status()
+URL = "https://www.nifs.no/kamper.php?countryId=2&tournamentId=7&stageId=711178"
 
-        soup = BeautifulSoup(response.content, 'html.parser')
+
+def _get_page_source():
+    response = requests.get(
+        URL,
+        headers={
+            'User-Agent': (
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/131.0.0.0 Safari/537.36'
+            )
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, 'html.parser')
+    if soup.select('div.kamp'):
+        return response.content
+
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.support.ui import WebDriverWait
+
+    options = Options()
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument(
+        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/131.0.0.0 Safari/537.36'
+    )
+
+    driver = webdriver.Chrome(options=options)
+    try:
+        driver.get(URL)
+        WebDriverWait(driver, 120).until(
+            lambda current_driver: current_driver.find_elements(
+                'css selector', 'div.kamp'
+            )
+        )
+        return driver.page_source
+    finally:
+        driver.quit()
+
+
+def load_matches():
+    """Scrape the fixture list and store it in st.session_state['matches'].
+
+    Returns None on success, or an error message string on failure. When an
+    error is returned, st.session_state['matches'] is left unset so the caller
+    can abort before running the simulation.
+    """
+    try:
+        soup = BeautifulSoup(_get_page_source(), 'html.parser')
 
         matches = soup.find_all('div', class_='kamp')
         data = []
 
+        print("Antall kamper:", len(matches))
         for match in matches:
             round_text = ""
             round_div = match.find_previous('div', string=lambda text: text and text.strip().startswith('Runde'))
@@ -56,11 +106,11 @@ def load_matches():
                 'Away Score': away_score
             })
 
-        if data:
-            st.session_state['matches'] = pd.DataFrame(data)
-        else:
-            st.session_state['matches'] = pd.DataFrame()
+        if not data:
+            return "No matches found on the page (the site layout may have changed)."
+
+        st.session_state['matches'] = pd.DataFrame(data)
+        return None
 
     except Exception as e:
-        st.error(f"Failed to scrape data: {e}")
-        st.info("Make sure the URL is correct and try again.")
+        return f"Failed to scrape matches: {e}"

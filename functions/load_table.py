@@ -5,8 +5,15 @@ from bs4 import BeautifulSoup
 
 
 def load_table():
+    """Scrape the league table and store it in st.session_state['table'].
+
+    Returns None on success (the table may legitimately be empty early in the
+    season), or an error message string on failure. When an error is returned,
+    st.session_state['table'] is left unset so the caller can abort before
+    running the simulation.
+    """
     try:
-        url = "https://www.nifs.no/tabell.php?countryId=2&tournamentId=7&stageId=699613"
+        url = "https://www.nifs.no/tabell.php?countryId=2&tournamentId=7&stageId=711178"
         response = requests.get(url)
         response.raise_for_status()
 
@@ -14,8 +21,7 @@ def load_table():
 
         table = soup.find('table', class_='nifs_table_r')
         if not table:
-            st.error("Could not find the league table on the page.")
-            return
+            return "Could not find the league table on the page (the site layout may have changed)."
 
         data = []
         for row in table.find_all('tr'):
@@ -54,10 +60,8 @@ def load_table():
                 'Pts':    int(points)  if points.lstrip('-').isdigit()  else points,
             })
 
-        if data:
-            st.session_state['table'] = pd.DataFrame(data)
-        else:
-            st.session_state['table'] = pd.DataFrame()
+        st.session_state['table'] = pd.DataFrame(data) if data else pd.DataFrame()
+        return None
 
     except Exception as e:
-        st.error(f"Failed to scrape table: {e}")
+        return f"Failed to scrape table: {e}"
